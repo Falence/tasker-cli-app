@@ -45,13 +45,25 @@ func init() {
 
 func main() {
 	app := &cli.App{
-		Name:     "tasker",
-		Usage:    "A simple CLI program to manage your tasks",
+		Name:  "tasker",
+		Usage: "A simple CLI program to manage your tasks",
+		Action: func(c *cli.Context) error {
+			tasks, err := getPending()
+			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					fmt.Print("Nothing to see here.\nRun `add 'task'` to add a task")
+					return nil
+				}
+				return err
+			}
+			printTasks(tasks)
+			return nil
+		},
 		Commands: []*cli.Command{
 			{
-				Name: "add",
+				Name:    "add",
 				Aliases: []string{"a"},
-				Usage: "add a task to the list",
+				Usage:   "add a task to the list",
 				Action: func(c *cli.Context) error {
 					str := c.Args().First()
 					if str == "" {
@@ -59,10 +71,10 @@ func main() {
 					}
 
 					task := &Task{
-						ID: primitive.NewObjectID(),
+						ID:        primitive.NewObjectID(),
 						CreatedAt: time.Now(),
 						UpdatedAt: time.Now(),
-						Text: str,
+						Text:      str,
 						Completed: false,
 					}
 
@@ -70,9 +82,9 @@ func main() {
 				},
 			},
 			{
-				Name: "all",
+				Name:    "all",
 				Aliases: []string{"l"},
-				Usage: "list all tasks",
+				Usage:   "list all tasks",
 				Action: func(c *cli.Context) error {
 					tasks, err := getAll()
 					if err != nil {
@@ -87,9 +99,9 @@ func main() {
 				},
 			},
 			{
-				Name: "done",
+				Name:    "done",
 				Aliases: []string{"d"},
-				Usage: "complete a task on the list",
+				Usage:   "complete a task on the list",
 				Action: func(c *cli.Context) error {
 					text := c.Args().First()
 					return completeTask(text)
@@ -104,7 +116,6 @@ func main() {
 	}
 }
 
-
 func printTasks(tasks []*Task) {
 	for i, v := range tasks {
 		if v.Completed {
@@ -114,7 +125,6 @@ func printTasks(tasks []*Task) {
 		}
 	}
 }
-
 
 func createTask(task *Task) error {
 	_, err := collection.InsertOne(ctx, task)
@@ -168,4 +178,12 @@ func completeTask(text string) error {
 
 	t := &Task{}
 	return collection.FindOneAndUpdate(ctx, filter, update).Decode(t)
+}
+
+func getPending() ([]*Task, error) {
+	filter := bson.D{
+		primitive.E{Key: "completed", Value: false},
+	}
+
+	return filterTasks(filter)
 }
