@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/urfave/cli/v2"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -79,4 +80,43 @@ func main() {
 func createTask(task *Task) error {
 	_, err := collection.InsertOne(ctx, task)
 	return err
+}
+
+func getAll() ([]*Task, error) {
+	// Passing bson.D{{}} matches all documents in the collection
+	filter := bson.D{{}}
+	return filterTasks(filter)
+}
+
+func filterTasks(filter interface{}) ([]*Task, error) {
+	// A slice of tasks for storing the decoded documents
+	var tasks []*Task
+
+	cur, err := collection.Find(ctx, filter)
+	if err != nil {
+		return tasks, err
+	}
+
+	for cur.Next(ctx) {
+		var t Task
+		err := cur.Decode(&t)
+		if err != nil {
+			return tasks, err
+		}
+
+		tasks = append(tasks, &t)
+	}
+
+	if err := cur.Err(); err != nil {
+		return tasks, err
+	}
+
+	// Once exhausted, close the cursor
+	cur.Close(ctx)
+
+	if len(tasks) == 0 {
+		return tasks, mongo.ErrNoDocuments
+	}
+
+	return tasks, nil
 }
