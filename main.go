@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"gopkg.in/gookit/color.v1"
 )
 
 var collection *mongo.Collection
@@ -67,12 +69,40 @@ func main() {
 					return createTask(task)
 				},
 			},
+			{
+				Name: "all",
+				Aliases: []string{"l"},
+				Usage: "list all tasks",
+				Action: func(c *cli.Context) error {
+					tasks, err := getAll()
+					if err != nil {
+						if err == mongo.ErrNoDocuments {
+							fmt.Print("Nothing to see here.\nRun `add 'task'` to add a task")
+							return nil
+						}
+						return err
+					}
+					printTasks(tasks)
+					return nil
+				},
+			},
 		},
 	}
 
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+
+func printTasks(tasks []*Task) {
+	for i, v := range tasks {
+		if v.Completed {
+			color.Green.Printf("%d: %s\n", i+1, v.Text)
+		} else {
+			color.Yellow.Printf("%d: %s\n", i+1, v.Text)
+		}
 	}
 }
 
