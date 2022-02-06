@@ -5,8 +5,8 @@
 ## Commands
 Pass the commands and arguements whe running the application.
 Here are the availaible commands:
-- **Add a task:** `go run main.go add "<task>"`
-- **Display uncompleted tasks:** `go run main.go`
-- **Display completed tasks:** `go run main.go finished`
-- **Complete a task:** `go run main.go done "<task>"`
-- **Delete a task:** `go run main.go rm "<task>"`
+- Add a task: `go run main.go add "<task>"`
+- Display uncompleted tasks: `go run main.go`
+- Display completed tasks: `go run main.go finished`
+- Complete a task: `go run main.go done "<task>"`
+- Delete a task: `go run main.go rm "<task>"`
