@@ -124,6 +124,18 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name: "rm",
+				Usage: "deletes a task on the list",
+				Action: func(c *cli.Context) error {
+					text := c.Args().First()
+					err := deleteTask(text)
+					if err != nil {
+						return err
+					}
+					return nil
+				},
+			},
 		},
 	}
 
@@ -210,4 +222,18 @@ func getFinished() ([]*Task, error) {
 		primitive.E{Key: "completed", Value: true},
 	}
 	return filterTasks(filter)
+}
+
+func deleteTask(text string) error {
+	filter := bson.D{primitive.E{Key: "text", Value: text}}
+	res, err := collection.DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	if res.DeletedCount == 0 {
+		return errors.New("no tasks were deleted")
+	}
+
+	return nil
 }
